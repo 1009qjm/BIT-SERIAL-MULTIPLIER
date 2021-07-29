@@ -27,10 +27,13 @@ logic rst;
 logic start;
 logic [4:0] WA;
 logic [4:0] WB;
-logic signed [31:0] A;
-logic signed [31:0] B;
+logic bitAin;
+logic bitBin;
 logic signed [31:0] O;
 logic done;
+logic signed [31:0] A;
+logic signed [31:0] B;
+logic [31:0] bitcount;
 //clk
 initial begin
     clk=0;
@@ -44,33 +47,67 @@ initial begin
     #20
     rst=0;
 end
-//start
-initial begin
-    start=0;
-    #50
-    start=1;
-    #10
-    start=0;
-end
+//stat
+always_ff@(posedge clk,posedge rst)
+if(rst||done)
+    start<=1;
+else
+    start<=0;
 //WA,WB
 initial begin
-    WA=7;
-    WB=5;
+    WA=8;
+    WB=7;
 end
 //A,B
-initial begin
-    A=14;
-    B=-13;
+always_ff@(posedge clk,posedge rst)
+if(rst)
+begin
+    A = $random % (1<<(WA-1)-1);
+    B = $random % (1<<(WB-1)-1);
 end
-
+else if(done)
+begin
+    A = $random % (1<<(WA-1)-1);
+    B = $random % (1<<(WB-1)-1);
+end
+//
+// initial begin
+//     A=15;
+//     B=-7;
+// end
+//bitAin
+always_comb
+    bitAin<=A[bitcount];
+//bitBin
+always_comb
+    bitBin<=B[bitcount];
+//bitcount
+always_ff@(posedge clk,posedge rst)
+if(rst)
+    bitcount<=0;
+else if(start)
+    bitcount<=0;
+else
+    bitcount<=bitcount+1;
+always_ff@(negedge clk)
+if(done)
+begin
+    $display("A=%d,B=%d,A*B=%d,O=%d",A,B,A*B,O);
+    if(A*B!=O)
+    begin
+        $display("test error!");
+        $stop;
+    end
+end
+//inst
 BSM U(
 .clk(clk),
 .rst(rst),
 .start(start),
 .WA(WA),                    //width of data A
 .WB(WB),                    //width of data B
-.A(A),
-.B(B),
+.bitAin(bitAin),
+.bitBin(bitBin),
 .O(O),
 .done(done)
 );
