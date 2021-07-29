@@ -45,10 +45,12 @@ logic [31:0]tmp1;
 logic [31:0]tmp2;
 logic [31:0]tmp3; 
 logic [4:0] maxW;                              //数据A和数据B宽度的较大值
+logic [31:0] singleWeight;
+logic [31:0] doubleWeight;
 
 assign maxW=(WA>WB)?WA:WB;
-assign bitA=((bitcount)>WA-1)?Acur[WA-1]:bitAin;
-assign bitB=((bitcount)>WB-1)?Bcur[WB-1]:bitBin;
+assign bitA=((bitcount)>WA-1)?Acur[2*WA-1]:bitAin;
+assign bitB=((bitcount)>WB-1)?Bcur[2*WB-1]:bitBin;
 assign signA=((bitcount)==maxW-1)?bitA:1'b0;
 assign signB=((bitcount)==maxW-1)?bitB:1'b0;
 assign bitand=bitA & bitB;
@@ -57,9 +59,9 @@ always_comb
 begin
 if(bitand==1'b1)
     if(signA^signB==1'b1)              //为负
-        tmp1=-1<<(bitcount+bitcount);
+        tmp1=-doubleWeight;
     else
-        tmp1= 1<<(bitcount+bitcount);
+        tmp1= doubleWeight;
 else
     tmp1=32'd0;
 end
@@ -68,9 +70,9 @@ always_comb
 begin
 if(bitA==1'b1)
     if(signA==1'b1)
-        tmp2=-Bcur<<bitcount;
+        tmp2=-Bcur;
     else
-        tmp2=Bcur<<bitcount;
+        tmp2=Bcur;
 else
     tmp2=0;
 end
@@ -79,9 +81,9 @@ always_comb
 begin
 if(bitB==1'b1)
     if(signB==1'b1)
-        tmp3=-Acur<<bitcount;
+        tmp3=-Acur;
     else
-        tmp3=Acur<<bitcount;
+        tmp3=Acur;
 else
     tmp3=0;
 end
@@ -95,14 +97,18 @@ else
 always_ff@(posedge clk)
 if(start)
     Acur<=0;
-else 
-    Acur[bitcount]<=bitA;
+else if(bitA==1'b1)
+    Acur<=((Acur|doubleWeight)<<1);
+else
+    Acur<=(Acur<<1);
 //Bcur
 always_ff@(posedge clk)
 if(start)
     Bcur<=0;
-else 
-    Bcur[bitcount]<=bitB;
+else if(bitB==1'b1)
+    Bcur<=((Bcur|doubleWeight)<<1);
+else
+    Bcur<=(Bcur<<1);
 //bitcount
 always_ff@(posedge clk)
 if(start)
@@ -119,4 +125,16 @@ else
     done<=0;
 //
 assign O=(done==1'b1)?Rcur:0;
+//singleWeight
+always_ff@(posedge clk)
+if(start)
+    singleWeight<=1;
+else 
+    singleWeight<=(singleWeight<<1);
+//doubleWeight
+always_ff@(posedge clk)
+if(start)
+    doubleWeight<=1;
+else
+    doubleWeight<=(doubleWeight<<2);
 endmodule

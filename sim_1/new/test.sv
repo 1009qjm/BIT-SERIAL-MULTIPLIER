@@ -55,8 +55,8 @@ else
     start<=0;
 //WA,WB
 initial begin
-    WA=8;
-    WB=7;
+    WA=14;
+    WB=15;
 end
 //A,B
 always_ff@(posedge clk,posedge rst)
