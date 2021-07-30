@@ -47,13 +47,29 @@ logic [31:0]tmp3;
 logic [4:0] maxW;                              //数据A和数据B宽度的较大值
 logic [31:0] singleWeight;
 logic [31:0] doubleWeight;
+logic signbitA;                                //寄存A的符号位以方便后续的符号扩展
+logic signbitB;                                //寄存B的符号位以方便后续的符号扩展
+
 
 assign maxW=(WA>WB)?WA:WB;
-assign bitA=((bitcount)>WA-1)?Acur[2*WA-1]:bitAin;
-assign bitB=((bitcount)>WB-1)?Bcur[2*WB-1]:bitBin;
+assign bitA=((bitcount)>WA-1)?signbitA:bitAin;                    //动态符号扩展
+assign bitB=((bitcount)>WB-1)?signbitB:bitBin;
 assign signA=((bitcount)==maxW-1)?bitA:1'b0;
 assign signB=((bitcount)==maxW-1)?bitB:1'b0;
 assign bitand=bitA & bitB;
+//signbitA
+always_ff@(posedge clk,posedge rst)
+if(rst)
+    signbitA<=1'b0;
+else if(bitcount==WA-1)
+    signbitA<=bitAin;
+//signbitB
+always_ff@(posedge clk,posedge rst)
+if(rst)
+    signbitB<=0;
+else if(bitcount==WB-1)
+    signbitB<=bitBin;
+
 //tmp1=(bitA & bitB)*(signA ^ signB)*(1<<(bitcount+bitcount))
 always_comb
 begin

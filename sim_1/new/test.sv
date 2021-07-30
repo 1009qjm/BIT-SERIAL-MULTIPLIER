@@ -55,7 +55,7 @@ else
     start<=0;
 //WA,WB
 initial begin
-    WA=14;
+    WA=8;
     WB=15;
 end
 //A,B
